@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Produção</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .page-section {
+            display: none;
+        }
+        .page-section.active {
+            display: block;
+        }
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .cost-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-3">
+                <h4 class="mb-4"><i class="fas fa-industry"></i> Dashboard</h4>
+                <nav class="nav flex-column">
+                    <a class="nav-link active" href="#" onclick="showPage('overview')">
+                        <i class="fas fa-chart-line me-2"></i> Visão Geral
+                    </a>
+                    <a class="nav-link" href="#" onclick="showPage('productions')">
+                        <i class="fas fa-list me-2"></i> Produções
+                    </a>
+                    <a class="nav-link" href="#" onclick="showPage('add-production')">
+                        <i class="fas fa-plus me-2"></i> Nova Produção
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <!-- Overview Page -->
+                <div id="overview" class="page-section active">
+                    <h2 class="mb-4">Visão Geral da Produção</h2>
+                    
+                    <!-- Metrics Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card metric-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-boxes fa-2x mb-2"></i>
+                                    <h3 id="total-productions">0</h3>
+                                    <p class="mb-0">Total de Produções</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card metric-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-dollar-sign fa-2x mb-2"></i>
+                                    <h3 id="total-value">R$ 0,00</h3>
+                                    <p class="mb-0">Valor Total</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card metric-card">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-tshirt fa-2x mb-2"></i>
+                                    <h3 id="total-pieces">0</h3>
+                                    <p class="mb-0">Total de Peças</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Gráfico de Produções</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="productionChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Productions Page -->
+                <div id="productions" class="page-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Lista de Produções</h2>
+                        <button class="btn btn-primary" onclick="showPage('add-production')">
+                            <i class="fas fa-plus me-2"></i> Nova Produção
+                        </button>
+                    </div>
+                    
+                    <div id="productions-list" class="row">
+                        <!-- Productions will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Add Production Page -->
+                <div id="add-production" class="page-section">
+                    <h2 class="mb-4">Nova Produção</h2>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="production-form">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="data" class="form-label">Data *</label>
+                                            <input type="date" class="form-control" id="data" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="nome-tecido" class="form-label">Nome do Tecido *</label>
+                                            <input type="text" class="form-control" id="nome-tecido" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h5 class="mb-3">Custos de Produção</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="corte" class="form-label">Corte</label>
+                                            <input type="number" step="0.01" class="form-control" id="corte" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="faccao" class="form-label">Facção</label>
+                                            <input type="number" step="0.01" class="form-control" id="faccao" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="travet" class="form-label">Travet</label>
+                                            <input type="number" step="0.01" class="form-control" id="travet" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="ziper" class="form-label">Zíper</label>
+                                            <input type="number" step="0.01" class="form-control" id="ziper" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="botao" class="form-label">Botão</label>
+                                            <input type="number" step="0.01" class="form-control" id="botao" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="aprontamento" class="form-label">Aprontamento</label>
+                                            <input type="number" step="0.01" class="form-control" id="aprontamento" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="lavanderia" class="form-label">Lavanderia</label>
+                                            <input type="number" step="0.01" class="form-control" id="lavanderia" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="bolsa" class="form-label">Bolsa</label>
+                                            <input type="number" step="0.01" class="form-control" id="bolsa" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="limpado" class="form-label">Limpado</label>
+                                            <input type="number" step="0.01" class="form-control" id="limpado" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="tag-etiqueta" class="form-label">Tag + Etiqueta</label>
+                                            <input type="number" step="0.01" class="form-control" id="tag-etiqueta" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="metragem-tecido" class="form-label">Metragem do Tecido</label>
+                                            <input type="number" step="0.01" class="form-control" id="metragem-tecido" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="preco-tecido" class="form-label">Preço do Tecido</label>
+                                            <input type="number" step="0.01" class="form-control" id="preco-tecido" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h5 class="mb-3">Informações do Pedido</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="quantidade-pecas" class="form-label">Quantidade de Peças *</label>
+                                            <input type="number" class="form-control" id="quantidade-pecas" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="valor-pedido" class="form-label">Valor do Pedido *</label>
+                                            <input type="number" step="0.01" class="form-control" id="valor-pedido" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="pagamentos" class="form-label">Pagamentos</label>
+                                            <input type="text" class="form-control" id="pagamentos">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-secondary me-2" onclick="showPage('overview')">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar Produção</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
